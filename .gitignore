@@ -1,15 +1,46 @@
-*.iml
+# Project-wide Gradle settings
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
 /build
-/captures
+
+# Android Studio / IntelliJ IDEA
+*.iml
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/shelf
+.idea/vcs.xml
+.idea/deploymentTargetSelector.xml
+.idea/renderer.settings.xml
+.idea/kotlin-kotlin-gradle-scripts.xml
+
+# Built variants
+**/build/
+**/intermediates/
+**/outputs/
+**/tmp/
+
+# Kotlin
+.kotlin
+/kotlin-daemon-file.akif
+
+# Android
+capture/
 .externalNativeBuild
 .cxx
-local.properties
+*.apk
+*.aar
+*.jks
+*.keystore
+
+# macOS
+.DS_Store
+
+# User-specific
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
