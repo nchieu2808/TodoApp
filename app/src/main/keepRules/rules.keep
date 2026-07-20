@@ -1,4 +1,7 @@
-# Add project specific R8 rules here.
+# Keep TodoItem for Firebase deserialization
+-keep class com.nch.todoapp.data.model.TodoItem { *; }
+-keepclassmembers class com.nch.todoapp.data.model.TodoItem { *; }
+
 # AGP will combine all keep rule files in src/main/keepRules to pass to R8
 #
 # For more details, see

@@ -4,7 +4,9 @@ import androidx.lifecycle.viewModelScope
 import com.nch.todoapp.data.manager.TodoManager
 import com.nch.todoapp.data.model.TodoItem
 import com.nch.todoapp.ui.base.BaseViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class CreateTodoViewModel (private val todoManager: TodoManager) : BaseViewModel() {
@@ -26,7 +28,9 @@ class CreateTodoViewModel (private val todoManager: TodoManager) : BaseViewModel
                     description = description
                 )
                 todoManager.createItems(newTodo)
-                onSuccess()
+                withContext(Dispatchers.Main.immediate) {
+                    onSuccess()
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to save task."
             } finally {

@@ -1,6 +1,8 @@
 package com.nch.todoapp.data.remote
 
 import com.nch.todoapp.data.model.TodoItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 val FakeToDoList = mutableListOf<TodoItem>(
     TodoItem("1", "A", "a"),
@@ -11,21 +13,22 @@ val FakeToDoList = mutableListOf<TodoItem>(
 class FakeAPIService : ApiService{
     private val remoteDb = FakeToDoList
 
-    override fun fetchRemoteTodos(): List<TodoItem> {
-        return remoteDb.toList()
+    override suspend fun fetchRemoteTodos(): List<TodoItem> = withContext(Dispatchers.IO) {
+        remoteDb.toList()
     }
 
-    override fun uploadTodo(item: TodoItem): Boolean {
+    override suspend fun uploadTodo(item: TodoItem): Boolean = withContext(Dispatchers.IO) {
         remoteDb.add(item)
-        return true
+        true
     }
 
-    override fun updateRemoteTodo(item: TodoItem): Boolean {
+    override suspend fun updateRemoteTodo(item: TodoItem): Boolean = withContext(Dispatchers.IO) {
         val index = remoteDb.indexOfFirst { it.id == item.id }
         if (index != -1) {
             remoteDb[index] = item
-            return true
+            true
+        } else {
+            false
         }
-        return false
     }
 }

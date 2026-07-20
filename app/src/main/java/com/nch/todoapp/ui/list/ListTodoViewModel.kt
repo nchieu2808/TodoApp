@@ -13,8 +13,8 @@ class ListTodoViewModel(private val todoManager: TodoManager) : BaseViewModel() 
 
     override fun getScreenName(): String = "Todo_List_Screen"
 
-    fun loadTodos() {
-        if (todoList.value.isNotEmpty()) return
+    fun loadTodos(forceRefresh: Boolean = false) {
+        if (!forceRefresh && todoList.value.isNotEmpty()) return
 
         viewModelScope.launch {
             _isLoading.value = true

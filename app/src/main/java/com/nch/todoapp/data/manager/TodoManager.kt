@@ -11,7 +11,7 @@ class TodoManager (
 ){
     val todoItemsState = MutableStateFlow<List<TodoItem>>(emptyList())
 
-    fun syncItems() {
+    suspend fun syncItems() {
         val remoteData = apiService.fetchRemoteTodos()
         localRepService.saveToCache(remoteData)
         todoItemsState.value = localRepService.getCachedItems().toList()
@@ -21,13 +21,13 @@ class TodoManager (
         return localRepService.getCachedItems()
     }
 
-    fun createItems(item: TodoItem) {
+    suspend fun createItems(item: TodoItem) {
         localRepService.updateCache(item)
         todoItemsState.value = localRepService.getCachedItems().toList()
         apiService.uploadTodo(item)
     }
 
-    fun updateItems(item: TodoItem) {
+    suspend fun updateItems(item: TodoItem) {
         localRepService.updateCache(item)
         todoItemsState.value = localRepService.getCachedItems().toList()
         apiService.updateRemoteTodo(item)
