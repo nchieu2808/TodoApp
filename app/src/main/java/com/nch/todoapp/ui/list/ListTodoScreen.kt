@@ -22,7 +22,6 @@ fun ListTodoScreen(
     val todos by viewModel.todoList.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    // Trigger initial load
     LaunchedEffect(Unit) {
         viewModel.loadTodos()
     }

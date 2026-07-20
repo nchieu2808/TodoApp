@@ -17,6 +17,5 @@ abstract class BaseViewModel : ViewModel() {
         _errorMessage.value = null
     }
 
-    // Force every child ViewModel to declare its analytics/screen identity
     abstract fun getScreenName(): String
 }

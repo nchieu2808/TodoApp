@@ -15,7 +15,7 @@ class FirebaseApiService : ApiService {
 
     override suspend fun fetchRemoteTodos(): List<TodoItem> = withContext(Dispatchers.IO) {
         try {
-            withTimeout(10000L.milliseconds) { // 10 second timeout
+            withTimeout(10000L.milliseconds) {
                 val snapshot = todoCollection.get().await()
                 snapshot.toObjects(TodoItem::class.java)
             }
@@ -27,7 +27,7 @@ class FirebaseApiService : ApiService {
 
     override suspend fun uploadTodo(item: TodoItem): Boolean = withContext(Dispatchers.IO) {
         try {
-            withTimeout(10000L.milliseconds) { // 10 second timeout
+            withTimeout(10000L.milliseconds) {
                 todoCollection.document(item.id).set(item).await()
                 true
             }
@@ -38,7 +38,6 @@ class FirebaseApiService : ApiService {
     }
 
     override suspend fun updateRemoteTodo(item: TodoItem): Boolean {
-        // Firestore set() overwrites/updates the document with matching item.id
         return uploadTodo(item)
     }
 }
