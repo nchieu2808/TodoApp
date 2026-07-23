@@ -2,18 +2,20 @@ package com.nch.todoapp.data.local
 
 import com.nch.todoapp.data.model.TodoItem
 
-class LocalRepServiceImpl : LocalRepService {
-    private val memoryCache = mutableListOf<TodoItem>()
+class LocalRepServiceImpl(private val todoDao: TodoDao) : LocalRepService {
 
-    override fun getCachedItems(): List<TodoItem> = memoryCache
+    override suspend fun getCachedItems(): List<TodoItem> = todoDao.getAllItems()
 
-    override fun saveToCache(items: List<TodoItem>) {
-        memoryCache.clear()
-        memoryCache.addAll(items)
+    override suspend fun saveToCache(items: List<TodoItem>) {
+        todoDao.clearAll()
+        todoDao.insertAll(items)
     }
 
-    override fun updateCache(item: TodoItem) {
-        val index = memoryCache.indexOfFirst { it.id == item.id }
-        if (index != -1) memoryCache[index] = item else memoryCache.add(item)
+    override suspend fun updateCache(item: TodoItem) {
+        todoDao.updateItem(item)
+    }
+
+    override suspend fun removeFromCache(id: String) {
+        todoDao.deleteById(id)
     }
 }

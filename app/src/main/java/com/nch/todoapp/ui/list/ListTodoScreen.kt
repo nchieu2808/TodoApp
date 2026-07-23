@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.nch.todoapp.data.model.TodoItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,8 +57,18 @@ fun ListTodoScreen(
                             Text(
                                 text = item.title,
                                 textDecoration = if (item.isCompleted) TextDecoration.LineThrough else null,
-                                style = MaterialTheme.typography.bodyLarge
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.weight(1f)
                             )
+                            item.imageUrl?.let { url ->
+                                AsyncImage(
+                                    model = url,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .padding(start = 8.dp)
+                                )
+                            }
                         }
                         HorizontalDivider()
                     }

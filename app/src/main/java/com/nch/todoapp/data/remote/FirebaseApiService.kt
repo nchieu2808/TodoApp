@@ -40,4 +40,16 @@ class FirebaseApiService : ApiService {
     override suspend fun updateRemoteTodo(item: TodoItem): Boolean {
         return uploadTodo(item)
     }
+
+    override suspend fun deleteRemoteTodo(id: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            withTimeout(10000L.milliseconds) {
+                todoCollection.document(id).delete().await()
+                true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
 }

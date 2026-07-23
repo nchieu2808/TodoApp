@@ -17,7 +17,7 @@ class TodoManager (
         todoItemsState.value = localRepService.getCachedItems().toList()
     }
 
-    fun getItems(): List<TodoItem> {
+    suspend fun getItems(): List<TodoItem> {
         return localRepService.getCachedItems()
     }
 
@@ -31,5 +31,11 @@ class TodoManager (
         localRepService.updateCache(item)
         todoItemsState.value = localRepService.getCachedItems().toList()
         apiService.updateRemoteTodo(item)
+    }
+
+    suspend fun deleteItem(id: String) {
+        localRepService.removeFromCache(id)
+        todoItemsState.value = localRepService.getCachedItems().toList()
+        apiService.deleteRemoteTodo(id)
     }
 }

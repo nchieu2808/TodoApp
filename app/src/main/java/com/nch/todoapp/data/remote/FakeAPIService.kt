@@ -14,7 +14,7 @@ class FakeAPIService : ApiService{
     private val remoteDb = FakeToDoList
 
     override suspend fun fetchRemoteTodos(): List<TodoItem> = withContext(Dispatchers.IO) {
-        remoteDb.toList()
+        remoteDb.sortedBy { it.isCompleted }
     }
 
     override suspend fun uploadTodo(item: TodoItem): Boolean = withContext(Dispatchers.IO) {
@@ -30,5 +30,10 @@ class FakeAPIService : ApiService{
         } else {
             false
         }
+    }
+
+    override suspend fun deleteRemoteTodo(id: String): Boolean = withContext(Dispatchers.IO) {
+        remoteDb.removeAll { it.id == id }
+        true
     }
 }
