@@ -12,9 +12,19 @@ class TodoManager (
     val todoItemsState = MutableStateFlow<List<TodoItem>>(emptyList())
 
     suspend fun syncItems() {
-        val remoteData = apiService.fetchRemoteTodos()
-        localRepService.saveToCache(remoteData)
-        todoItemsState.value = localRepService.getCachedItems().toList()
+        try {
+            val remoteData = apiService.fetchRemoteTodos()
+            if (remoteData.isNotEmpty()) {
+                // Merge remote data into local cache
+                localRepService.saveToCache(remoteData)
+            }
+        } catch (e: Exception) {
+            // Log error but don't wipe local data
+            android.util.Log.e("TodoManager", "Sync failed", e)
+        } finally {
+            // Always update the UI state from local cache
+            todoItemsState.value = localRepService.getCachedItems().toList()
+        }
     }
 
     suspend fun getItems(): List<TodoItem> {

@@ -8,7 +8,7 @@ import com.nch.todoapp.data.model.TodoItem
 
 @Dao
 interface TodoDao {
-    @Query("SELECT * FROM todos ORDER BY isCompleted ASC")
+    @Query("SELECT * FROM todos ORDER BY isCompleted ASC, dueDate IS NULL ASC, dueDate ASC")
     suspend fun getAllItems(): List<TodoItem>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

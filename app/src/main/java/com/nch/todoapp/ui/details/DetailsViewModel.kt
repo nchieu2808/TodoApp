@@ -24,7 +24,7 @@ class DetailsViewModel(private val todoManager: TodoManager) : BaseViewModel() {
         }
     }
 
-    fun updateTodo(title: String, description: String, imageUrl: String?) {
+    fun updateTodo(title: String, description: String, imageUrl: String?, dueDate: Long?) {
         val currentItem = _todoItem.value ?: return
         viewModelScope.launch {
             _isLoading.value = true
@@ -32,7 +32,8 @@ class DetailsViewModel(private val todoManager: TodoManager) : BaseViewModel() {
                 val updatedItem = currentItem.copy(
                     title = title,
                     description = if (description.isBlank()) null else description,
-                    imageUrl = if (imageUrl.isNullOrBlank()) null else imageUrl
+                    imageUrl = if (imageUrl.isNullOrBlank()) null else imageUrl,
+                    dueDate = dueDate
                 )
                 todoManager.updateItems(updatedItem)
                 _todoItem.value = updatedItem

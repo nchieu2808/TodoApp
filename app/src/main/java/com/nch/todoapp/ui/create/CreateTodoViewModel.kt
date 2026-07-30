@@ -13,7 +13,13 @@ class CreateTodoViewModel (private val todoManager: TodoManager) : BaseViewModel
 
     override fun getScreenName(): String = "Todo_Create_Screen"
 
-    fun saveTodo(title: String, description: String, imageUrl: String?, onSuccess: () -> Unit) {
+    fun saveTodo(
+        title: String,
+        description: String,
+        imageUrl: String?,
+        dueDate: Long?,
+        onSuccess: () -> Unit
+    ) {
         if (title.isBlank()) {
             _errorMessage.value = "Title cannot be empty"
             return
@@ -26,14 +32,16 @@ class CreateTodoViewModel (private val todoManager: TodoManager) : BaseViewModel
                     id = UUID.randomUUID().toString(),
                     title = title,
                     description = if (description.isBlank()) null else description,
-                    imageUrl = if (imageUrl.isNullOrBlank()) null else imageUrl
+                    imageUrl = if (imageUrl.isNullOrBlank()) null else imageUrl,
+                    dueDate = dueDate
                 )
                 todoManager.createItems(newTodo)
                 withContext(Dispatchers.Main.immediate) {
                     onSuccess()
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to save task."
+                android.util.Log.e("CreateTodoViewModel", "Error saving todo", e)
+                _errorMessage.value = "Failed to save task: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

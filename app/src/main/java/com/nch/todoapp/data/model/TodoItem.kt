@@ -9,10 +9,14 @@ import com.google.firebase.firestore.PropertyName
 @Entity(tableName = "todos")
 data class TodoItem(
     @PrimaryKey
-    val id: String = "",
-    val title: String = "",
-    val description: String? = null,
+    var id: String = "",
+    var title: String = "",
+    var description: String? = null,
+    
     @get:PropertyName("isCompleted")
-    val isCompleted: Boolean = false,
-    val imageUrl: String? = null
+    @set:PropertyName("isCompleted")
+    var isCompleted: Boolean = false,
+    
+    var imageUrl: String? = null,
+    var dueDate: Long? = null
 )

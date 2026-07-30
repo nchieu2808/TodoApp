@@ -1,5 +1,6 @@
 package com.nch.todoapp.data.remote
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.nch.todoapp.data.model.TodoItem
 import kotlinx.coroutines.Dispatchers
@@ -17,10 +18,12 @@ class FirebaseApiService : ApiService {
         try {
             withTimeout(10000L.milliseconds) {
                 val snapshot = todoCollection.get().await()
-                snapshot.toObjects(TodoItem::class.java)
+                val items = snapshot.toObjects(TodoItem::class.java)
+                Log.d("FirebaseApiService", "Fetched ${items.size} todos")
+                items
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("FirebaseApiService", "Error fetching todos", e)
             emptyList()
         }
     }
@@ -29,10 +32,11 @@ class FirebaseApiService : ApiService {
         try {
             withTimeout(10000L.milliseconds) {
                 todoCollection.document(item.id).set(item).await()
+                Log.d("FirebaseApiService", "Successfully uploaded todo: ${item.id}")
                 true
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("FirebaseApiService", "Error uploading todo: ${item.id}", e)
             false
         }
     }
@@ -43,12 +47,12 @@ class FirebaseApiService : ApiService {
 
     override suspend fun deleteRemoteTodo(id: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            withTimeout(10000L.milliseconds) {
+            withTimeout(10000L) {
                 todoCollection.document(id).delete().await()
                 true
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("FirebaseApiService", "Error deleting todo: $id", e)
             false
         }
     }
