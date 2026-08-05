@@ -1,33 +1,42 @@
 package com.nch.todoapp.ui.details
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.net.Uri
-import android.os.Environment
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Event
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.nch.todoapp.data.model.TodoItem
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
+import com.nch.todoapp.ui.common.DueDateField
+import com.nch.todoapp.ui.common.ImageSourcePickerDialog
+import com.nch.todoapp.ui.common.ImageUrlField
+import com.nch.todoapp.ui.common.formatDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +45,6 @@ fun DetailsScreen(
     viewModel: DetailsViewModel,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
     val item by viewModel.todoItem.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.errorMessage.collectAsState()
@@ -46,46 +54,16 @@ fun DetailsScreen(
     var editDescription by remember(item) { mutableStateOf(item?.description ?: "") }
     var editImageUrl by remember(item) { mutableStateOf(item?.imageUrl ?: "") }
     var editDueDate by remember(item) { mutableStateOf(item?.dueDate) }
-
-    var showDialog by remember { mutableStateOf(false) }
-    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> uri?.let { editImageUrl = it.toString() } }
-    )
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            if (success) tempPhotoUri?.let { editImageUrl = it.toString() }
-        }
-    )
+    var showImagePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(id) {
         viewModel.loadDetails(id)
     }
 
-    if (showDialog) {
-        ImageSourceDialog(
-            onDismiss = { showDialog = false },
-            onLibrarySelect = {
-                photoPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-                showDialog = false
-            },
-            onCameraSelect = {
-                val file = createImageFile(context)
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    file
-                )
-                tempPhotoUri = uri
-                cameraLauncher.launch(uri)
-                showDialog = false
-            }
+    if (showImagePicker) {
+        ImageSourcePickerDialog(
+            onDismiss = { showImagePicker = false },
+            onImageSelected = { editImageUrl = it }
         )
     }
 
@@ -119,7 +97,7 @@ fun DetailsScreen(
                 onImageUrlChange = { editImageUrl = it },
                 editDueDate = editDueDate,
                 onDueDateChange = { editDueDate = it },
-                onAddPhotoClick = { showDialog = true },
+                onAddPhotoClick = { showImagePicker = true },
                 onSaveClick = {
                     viewModel.updateTodo(editTitle, editDescription, editImageUrl, editDueDate)
                     isEditing = false
@@ -202,7 +180,7 @@ private fun DetailContentWrapper(
             ViewDetailContent(item = item)
         }
     }
-    
+
     if (isLoading && item != null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -213,7 +191,7 @@ private fun DetailContentWrapper(
 @Composable
 private fun ViewDetailContent(item: TodoItem) {
     Text(text = item.title, style = MaterialTheme.typography.headlineMedium)
-    
+
     item.dueDate?.let {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
@@ -262,34 +240,6 @@ private fun EditDetailContent(
     onSaveClick: () -> Unit,
     isLoading: Boolean
 ) {
-    val context = LocalContext.current
-    val calendar = remember { Calendar.getInstance() }
-    dueDate?.let { calendar.timeInMillis = it }
-
-    val datePickerDialog = DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            calendar.set(Calendar.YEAR, year)
-            calendar.set(Calendar.MONTH, month)
-            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-            
-            TimePickerDialog(
-                context,
-                { _, hourOfDay, minute ->
-                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                    calendar.set(Calendar.MINUTE, minute)
-                    onDueDateChange(calendar.timeInMillis)
-                },
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                true
-            ).show()
-        },
-        calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
-        calendar.get(Calendar.DAY_OF_MONTH)
-    )
-
     OutlinedTextField(
         value = title,
         onValueChange = onTitleChange,
@@ -305,61 +255,21 @@ private fun EditDetailContent(
         minLines = 3
     )
     Spacer(modifier = Modifier.height(16.dp))
-    
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = if (dueDate != null) formatDateTime(dueDate) else "",
-            onValueChange = { },
-            label = { Text("Due Date (Optional)") },
-            modifier = Modifier.weight(0.8f),
-            readOnly = true,
-            trailingIcon = {
-                if (dueDate != null) {
-                    IconButton(onClick = { onDueDateChange(null) }) {
-                        Text("X")
-                    }
-                }
-            }
-        )
 
-        IconButton(
-            onClick = { datePickerDialog.show() },
-            modifier = Modifier.weight(0.2f)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Event,
-                contentDescription = "Pick Date"
-            )
-        }
-    }
+    DueDateField(
+        dueDate = dueDate,
+        onDueDateChange = onDueDateChange,
+        enabled = !isLoading
+    )
 
     Spacer(modifier = Modifier.height(16.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = imageUrl,
-            onValueChange = onImageUrlChange,
-            label = { Text("Image URL") },
-            modifier = Modifier.weight(0.8f)
-        )
+    ImageUrlField(
+        imageUrl = imageUrl,
+        onImageUrlChange = onImageUrlChange,
+        onAddPhotoClick = onAddPhotoClick,
+        enabled = !isLoading
+    )
 
-        IconButton(
-            onClick = onAddPhotoClick,
-            modifier = Modifier.weight(0.2f)
-        ) {
-            Icon(
-                imageVector = Icons.Default.AddAPhoto,
-                contentDescription = "Add Image"
-            )
-        }
-    }
     Spacer(modifier = Modifier.height(24.dp))
     Button(
         onClick = onSaveClick,
@@ -368,38 +278,4 @@ private fun EditDetailContent(
     ) {
         Text("Save Changes")
     }
-}
-
-@Composable
-private fun ImageSourceDialog(
-    onDismiss: () -> Unit,
-    onLibrarySelect: () -> Unit,
-    onCameraSelect: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Image") },
-        text = { Text("Choose a source for your image.") },
-        confirmButton = {
-            TextButton(onClick = onCameraSelect) {
-                Text("Camera")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onLibrarySelect) {
-                Text("Library")
-            }
-        }
-    )
-}
-
-private fun createImageFile(context: android.content.Context): File {
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-    return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
-}
-
-private fun formatDateTime(timestamp: Long): String {
-    val sdf = SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
-    return sdf.format(Date(timestamp))
 }

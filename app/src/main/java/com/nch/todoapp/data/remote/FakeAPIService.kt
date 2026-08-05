@@ -22,7 +22,12 @@ class FakeAPIService : ApiService{
     }
 
     override suspend fun uploadTodo(item: TodoItem): Boolean = withContext(Dispatchers.IO) {
-        remoteDb.add(item)
+        val index = remoteDb.indexOfFirst { it.id == item.id }
+        if (index != -1) {
+            remoteDb[index] = item
+        } else {
+            remoteDb.add(item)
+        }
         true
     }
 

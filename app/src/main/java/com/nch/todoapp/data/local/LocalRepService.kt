@@ -7,4 +7,5 @@ interface LocalRepService {
     suspend fun saveToCache(items: List<TodoItem>)
     suspend fun updateCache(item: TodoItem)
     suspend fun removeFromCache(id: String)
+    suspend fun clearCache()
 }

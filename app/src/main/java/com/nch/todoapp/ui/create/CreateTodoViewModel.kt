@@ -4,12 +4,15 @@ import androidx.lifecycle.viewModelScope
 import com.nch.todoapp.data.manager.TodoManager
 import com.nch.todoapp.data.model.TodoItem
 import com.nch.todoapp.ui.base.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import javax.inject.Inject
 
-class CreateTodoViewModel (private val todoManager: TodoManager) : BaseViewModel() {
+@HiltViewModel
+class CreateTodoViewModel @Inject constructor(private val todoManager: TodoManager) : BaseViewModel() {
 
     override fun getScreenName(): String = "Todo_Create_Screen"
 

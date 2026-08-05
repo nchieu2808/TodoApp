@@ -12,11 +12,11 @@ data class TodoItem(
     var id: String = "",
     var title: String = "",
     var description: String? = null,
-    
+
     @get:PropertyName("isCompleted")
     @set:PropertyName("isCompleted")
     var isCompleted: Boolean = false,
-    
+
     var imageUrl: String? = null,
     var dueDate: Long? = null
 )

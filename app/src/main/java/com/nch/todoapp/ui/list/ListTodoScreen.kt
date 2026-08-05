@@ -9,22 +9,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.nch.todoapp.R
 import com.nch.todoapp.data.model.TodoItem
+import com.nch.todoapp.ui.common.formatDateTime
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +33,8 @@ import kotlin.time.Duration.Companion.seconds
 fun ListTodoScreen(
     viewModel: ListTodoViewModel,
     onNavigateToCreate: () -> Unit,
-    onNavigateToDetails: (id: String) -> Unit
+    onNavigateToDetails: (id: String) -> Unit,
+    onSignOut: () -> Unit
 ) {
     val todos by viewModel.todoList.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -109,6 +111,12 @@ fun ListTodoScreen(
                                 leadingIcon = { if (currentFilter == TodoFilter.NOT_COMPLETED) Text("✓") }
                             )
                         }
+                    }
+                    IconButton(onClick = onSignOut) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = stringResource(R.string.sign_out)
+                        )
                     }
                 }
             )
@@ -296,8 +304,3 @@ private fun TodoRow(
 
 private fun String.truncate(maxLength: Int = 10): String =
     if (length > maxLength) "${take(maxLength)}..." else this
-
-private fun formatDateTime(timestamp: Long): String {
-    val sdf = SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault())
-    return sdf.format(Date(timestamp))
-}

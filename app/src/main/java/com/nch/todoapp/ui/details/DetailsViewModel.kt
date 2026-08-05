@@ -4,28 +4,42 @@ import androidx.lifecycle.viewModelScope
 import com.nch.todoapp.data.manager.TodoManager
 import com.nch.todoapp.data.model.TodoItem
 import com.nch.todoapp.ui.base.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class DetailsViewModel(private val todoManager: TodoManager) : BaseViewModel() {
+@HiltViewModel
+class DetailsViewModel @Inject constructor(
+    private val todoManager: TodoManager
+) : BaseViewModel() {
 
-    private val _todoItem = MutableStateFlow<TodoItem?>(null)
-    val todoItem: StateFlow<TodoItem?> = _todoItem.asStateFlow()
+    private val todoId = MutableStateFlow("")
+
+    val todoItem: StateFlow<TodoItem?> =
+        combine(todoManager.todoItemsState, todoId) { items, id ->
+            items.find { it.id == id }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     override fun getScreenName(): String = "Todo_Details_Screen"
 
     fun loadDetails(id: String) {
+        todoId.value = id
         viewModelScope.launch {
-            _todoItem.value = todoManager.getItems().find { it.id == id }
+            if (todoManager.todoItemsState.value.none { it.id == id }) {
+                todoManager.syncItems()
+            }
         }
     }
 
     fun updateTodo(title: String, description: String, imageUrl: String?, dueDate: Long?) {
-        val currentItem = _todoItem.value ?: return
+        val currentItem = todoItem.value ?: return
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -36,7 +50,6 @@ class DetailsViewModel(private val todoManager: TodoManager) : BaseViewModel() {
                     dueDate = dueDate
                 )
                 todoManager.updateItems(updatedItem)
-                _todoItem.value = updatedItem
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to update task."
             } finally {

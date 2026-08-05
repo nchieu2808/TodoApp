@@ -1,51 +1,74 @@
 package com.nch.todoapp.data.manager
 
+import android.util.Log
 import com.nch.todoapp.data.local.LocalRepService
-import com.nch.todoapp.data.remote.ApiService
 import com.nch.todoapp.data.model.TodoItem
+import com.nch.todoapp.data.remote.ApiService
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TodoManager (
+@Singleton
+class TodoManager @Inject constructor(
     private val localRepService: LocalRepService,
     private val apiService: ApiService
-){
+) {
     val todoItemsState = MutableStateFlow<List<TodoItem>>(emptyList())
 
-    suspend fun syncItems() {
+    private val mutex = Mutex()
+
+    suspend fun syncItems() = mutex.withLock {
         try {
             val remoteData = apiService.fetchRemoteTodos()
-            if (remoteData.isNotEmpty()) {
-                // Merge remote data into local cache
-                localRepService.saveToCache(remoteData)
-            }
+            // Remote is source of truth on successful fetch (including empty list).
+            localRepService.saveToCache(remoteData)
         } catch (e: Exception) {
-            // Log error but don't wipe local data
-            android.util.Log.e("TodoManager", "Sync failed", e)
+            // Keep local cache when remote is unavailable.
+            Log.e(TAG, "Sync failed", e)
         } finally {
-            // Always update the UI state from local cache
-            todoItemsState.value = localRepService.getCachedItems().toList()
+            refreshStateLocked()
         }
     }
 
-    suspend fun getItems(): List<TodoItem> {
-        return localRepService.getCachedItems()
-    }
+    suspend fun getItems(): List<TodoItem> = localRepService.getCachedItems()
 
-    suspend fun createItems(item: TodoItem) {
+    suspend fun createItems(item: TodoItem) = mutex.withLock {
+        if (!apiService.uploadTodo(item)) {
+            throw IOException("Failed to save task to remote storage")
+        }
         localRepService.updateCache(item)
-        todoItemsState.value = localRepService.getCachedItems().toList()
-        apiService.uploadTodo(item)
+        refreshStateLocked()
     }
 
-    suspend fun updateItems(item: TodoItem) {
+    suspend fun updateItems(item: TodoItem) = mutex.withLock {
+        if (!apiService.updateRemoteTodo(item)) {
+            throw IOException("Failed to update task on remote storage")
+        }
         localRepService.updateCache(item)
-        todoItemsState.value = localRepService.getCachedItems().toList()
-        apiService.updateRemoteTodo(item)
+        refreshStateLocked()
     }
 
-    suspend fun deleteItem(id: String) {
+    suspend fun deleteItem(id: String) = mutex.withLock {
+        if (!apiService.deleteRemoteTodo(id)) {
+            throw IOException("Failed to delete task on remote storage")
+        }
         localRepService.removeFromCache(id)
+        refreshStateLocked()
+    }
+
+    suspend fun clearSession() = mutex.withLock {
+        localRepService.clearCache()
+        todoItemsState.value = emptyList()
+    }
+
+    private suspend fun refreshStateLocked() {
         todoItemsState.value = localRepService.getCachedItems().toList()
-        apiService.deleteRemoteTodo(id)
+    }
+
+    companion object {
+        private const val TAG = "TodoManager"
     }
 }
