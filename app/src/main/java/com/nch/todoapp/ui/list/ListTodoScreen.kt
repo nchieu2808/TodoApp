@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -149,6 +151,7 @@ fun ListTodoScreen(
             isLoading = isLoading,
             todos = todos,
             padding = padding,
+            onRefresh = { viewModel.loadTodos() },
             onNavigateToDetails = onNavigateToDetails,
             onToggleTodo = { viewModel.toggleTodoCompletion(it) },
             onDeleteTodo = onDeleteTodo
@@ -156,26 +159,28 @@ fun ListTodoScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TodoListContent(
     isLoading: Boolean,
     todos: List<TodoItem>,
     padding: PaddingValues,
+    onRefresh: () -> Unit,
     onNavigateToDetails: (String) -> Unit,
     onToggleTodo: (TodoItem) -> Unit,
     onDeleteTodo: (TodoItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    PullToRefreshBox(
+        isRefreshing = isLoading,
+        onRefresh = onRefresh,
+        state = pullToRefreshState,
         modifier = modifier
             .fillMaxSize()
             .padding(padding)
     ) {
-        if (isLoading && todos.isEmpty()) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            return@Box
-        }
-
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(
                 items = todos,
@@ -188,6 +193,10 @@ private fun TodoListContent(
                     onClick = { onNavigateToDetails(item.id) }
                 )
             }
+        }
+
+        if (isLoading && todos.isEmpty()) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }
 }
