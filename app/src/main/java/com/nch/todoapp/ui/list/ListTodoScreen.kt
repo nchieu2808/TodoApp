@@ -127,15 +127,15 @@ fun ListTodoScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToCreate,
-                containerColor = Color(0xFFEBE7CD),
-                contentColor = Color.Black,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 6.dp,
                     pressedElevation = 12.dp
                 ),
                 modifier = Modifier.border(
                     width = 2.dp,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     shape = FloatingActionButtonDefaults.shape
                 )
             ) {
@@ -244,7 +244,7 @@ private fun SwipeableTodoItem(
 @Composable
 private fun DismissBackground(targetValue: SwipeToDismissBoxValue) {
     val color = if (targetValue == SwipeToDismissBoxValue.StartToEnd) {
-        Color.Red.copy(alpha = 0.8f)
+        MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
     } else {
         Color.Transparent
     }
@@ -259,7 +259,7 @@ private fun DismissBackground(targetValue: SwipeToDismissBoxValue) {
         Icon(
             imageVector = Icons.Default.Delete,
             contentDescription = "Delete",
-            tint = Color.White
+            tint = MaterialTheme.colorScheme.onError
         )
     }
 }
