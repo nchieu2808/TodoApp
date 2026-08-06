@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ToDoApp — Screen Flow</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --stroke: #2a3140;
+      --text: #e8eaed;
+      --muted: #9aa3b2;
+      --accent: #3d8bfd;
+      --accent-dim: #1e3a5f;
+      --ok: #3dd68c;
+      --warn: #f0b429;
+      --node: #1e2430;
+      --node-active: #243652;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--stroke);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      min-height: 0;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: auto;
+      padding: 24px;
+    }
+
+    svg.graph {
+      width: 100%;
+      max-width: 860px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .node {
+      cursor: pointer;
+    }
+    .node rect {
+      fill: var(--node);
+      stroke: var(--stroke);
+      stroke-width: 1.5;
+      rx: 10;
+      transition: fill 0.15s, stroke 0.15s;
+    }
+    .node text {
+      fill: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .node .sub {
+      font-size: 11px;
+      font-weight: 400;
+      fill: var(--muted);
+    }
+    .node.active rect {
+      fill: var(--node-active);
+      stroke: var(--accent);
+    }
+    .node.reachable rect {
+      stroke: var(--ok);
+    }
+
+    .edge path {
+      fill: none;
+      stroke: #4a5568;
+      stroke-width: 1.75;
+      marker-end: url(#arrow);
+      transition: stroke 0.15s, stroke-width 0.15s;
+    }
+    .edge.active path {
+      stroke: var(--accent);
+      stroke-width: 2.5;
+      marker-end: url(#arrow-active);
+    }
+    .edge text {
+      fill: var(--muted);
+      font-size: 11px;
+      pointer-events: none;
+    }
+    .edge.active text {
+      fill: var(--accent);
+      font-weight: 600;
+    }
+    .edge.clickable {
+      cursor: pointer;
+    }
+    .edge.clickable path {
+      stroke-width: 12;
+      stroke: transparent;
+      marker-end: none;
+    }
+    .edge.clickable .visible {
+      stroke: #4a5568;
+      stroke-width: 1.75;
+      marker-end: url(#arrow);
+      pointer-events: none;
+    }
+
+    aside {
+      border-left: 1px solid var(--stroke);
+      background: var(--panel);
+      padding: 20px;
+      overflow: auto;
+    }
+    @media (max-width: 900px) {
+      aside { border-left: none; border-top: 1px solid var(--stroke); }
+    }
+
+    aside h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+    aside .route {
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .actions button {
+      appearance: none;
+      border: 1px solid var(--stroke);
+      background: var(--node);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .actions button:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .actions button .label {
+      display: block;
+      font-weight: 600;
+    }
+    .actions button .hint {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .legend {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--stroke);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      margin-right: 6px;
+      font-size: 11px;
+    }
+    .pill.auth { border-color: var(--warn); color: var(--warn); }
+    .pill.nav { border-color: var(--accent); color: var(--accent); }
+
+    .trail {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .trail strong { color: var(--text); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>ToDoApp screen flow</h1>
+      <p>Click a screen or transition. Auth changes reset the back stack.</p>
+    </div>
+    <div>
+      <span class="pill auth">auth-driven</span>
+      <span class="pill nav">navigate / pop</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="canvas-wrap">
+      <svg class="graph" viewBox="0 0 820 520" role="img" aria-label="Navigation graph">
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#4a5568" />
+          </marker>
+          <marker id="arrow-active" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#3d8bfd" />
+          </marker>
+        </defs>
+
+        <!-- Edges (drawn under nodes) -->
+        <g id="edges"></g>
+        <g id="nodes"></g>
+      </svg>
+    </div>
+
+    <aside>
+      <h2 id="screen-title">—</h2>
+      <div class="route" id="screen-route"></div>
+      <div class="actions" id="actions"></div>
+      <div class="trail">Path: <strong id="trail">Login</strong></div>
+      <div class="legend">
+        Based on <code>AppNavigation.kt</code> / <code>Routes.kt</code>.
+        Sign-in and sign-out clear the stack via <code>popUpTo(0)</code>.
+        Create / Details return with <code>popBackStack()</code>.
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const screens = {
+      login: {
+        id: "login",
+        title: "Login",
+        route: "login",
+        sub: "Google or Guest",
+        x: 320, y: 40, w: 180, h: 64
+      },
+      list: {
+        id: "list",
+        title: "Task List",
+        route: "list",
+        sub: "filter · swipe delete",
+        x: 320, y: 200, w: 180, h: 64
+      },
+      create: {
+        id: "create",
+        title: "Create Task",
+        route: "create",
+        sub: "form · photo",
+        x: 80, y: 380, w: 180, h: 64
+      },
+      details: {
+        id: "details",
+        title: "Task Details",
+        route: "details/{todoId}",
+        sub: "view · edit · delete",
+        x: 560, y: 380, w: 180, h: 64
+      }
+    };
+
+    const transitions = [
+      {
+        id: "t-google",
+        from: "login",
+        to: "list",
+        label: "Sign in with Google",
+        kind: "auth",
+        path: "M410,104 C410,140 410,160 410,200",
+        labelX: 430, labelY: 150
+      },
+      {
+        id: "t-guest",
+        from: "login",
+        to: "list",
+        label: "Continue as Guest",
+        kind: "auth",
+        path: "M380,104 C340,150 340,170 380,200",
+        labelX: 250, labelY: 155
+      },
+      {
+        id: "t-signout",
+        from: "list",
+        to: "login",
+        label: "Sign out",
+        kind: "auth",
+        path: "M440,200 C520,150 520,120 440,104",
+        labelX: 530, labelY: 148
+      },
+      {
+        id: "t-create",
+        from: "list",
+        to: "create",
+        label: "FAB +",
+        kind: "nav",
+        path: "M320,264 C220,300 180,330 170,380",
+        labelX: 190, labelY: 310
+      },
+      {
+        id: "t-details",
+        from: "list",
+        to: "details",
+        label: "Tap row",
+        kind: "nav",
+        path: "M500,264 C600,300 640,330 650,380",
+        labelX: 580, labelY: 310
+      },
+      {
+        id: "t-create-back",
+        from: "create",
+        to: "list",
+        label: "Back / Save success",
+        kind: "nav",
+        path: "M200,380 C240,340 280,300 320,264",
+        labelX: 140, labelY: 340
+      },
+      {
+        id: "t-details-back",
+        from: "details",
+        to: "list",
+        label: "Back / After delete",
+        kind: "nav",
+        path: "M620,380 C580,340 540,300 500,264",
+        labelX: 640, labelY: 340
+      }
+    ];
+
+    let current = "login";
+    let trail = ["Login"];
+
+    const edgesG = document.getElementById("edges");
+    const nodesG = document.getElementById("nodes");
+
+    function edgeMidpoint(d) {
+      // Approximate label already provided
+      return d;
+    }
+
+    function renderGraph() {
+      edgesG.innerHTML = "";
+      nodesG.innerHTML = "";
+
+      transitions.forEach((t) => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.classList.add("edge");
+        g.dataset.id = t.id;
+        if (t.from === current) g.classList.add("clickable");
+
+        const hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        hit.setAttribute("d", t.path);
+        hit.setAttribute("fill", "none");
+        hit.style.stroke = "transparent";
+        hit.style.strokeWidth = "14";
+        hit.style.cursor = t.from === current ? "pointer" : "default";
+
+        const visible = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        visible.classList.add("visible");
+        visible.setAttribute("d", t.path);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", t.labelX);
+        label.setAttribute("y", t.labelY);
+        label.textContent = t.label;
+
+        g.appendChild(hit);
+        g.appendChild(visible);
+        g.appendChild(label);
+
+        if (t.from === current) {
+          g.addEventListener("click", (e) => {
+            e.stopPropagation();
+            go(t.to, t.label);
+          });
+        }
+
+        edgesG.appendChild(g);
+      });
+
+      Object.values(screens).forEach((s) => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.classList.add("node");
+        g.dataset.id = s.id;
+        if (s.id === current) g.classList.add("active");
+
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", s.x);
+        rect.setAttribute("y", s.y);
+        rect.setAttribute("width", s.w);
+        rect.setAttribute("height", s.h);
+
+        const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        title.setAttribute("x", s.x + s.w / 2);
+        title.setAttribute("y", s.y + 28);
+        title.setAttribute("text-anchor", "middle");
+        title.textContent = s.title;
+
+        const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        sub.classList.add("sub");
+        sub.setAttribute("x", s.x + s.w / 2);
+        sub.setAttribute("y", s.y + 46);
+        sub.setAttribute("text-anchor", "middle");
+        sub.textContent = s.sub;
+
+        g.appendChild(rect);
+        g.appendChild(title);
+        g.appendChild(sub);
+        g.addEventListener("click", () => select(s.id));
+        nodesG.appendChild(g);
+      });
+
+      highlightFrom(current);
+      updatePanel();
+    }
+
+    function highlightFrom(id) {
+      document.querySelectorAll(".edge").forEach((el) => {
+        const t = transitions.find((x) => x.id === el.dataset.id);
+        const on = t && t.from === id;
+        el.classList.toggle("active", on);
+        const vis = el.querySelector(".visible");
+        if (vis) {
+          vis.style.stroke = on ? "#3d8bfd" : "#4a5568";
+          vis.style.strokeWidth = on ? "2.5" : "1.75";
+          vis.setAttribute("marker-end", on ? "url(#arrow-active)" : "url(#arrow)");
+        }
+        const label = el.querySelector("text");
+        if (label) label.style.fill = on ? "#3d8bfd" : "#9aa3b2";
+      });
+      document.querySelectorAll(".node").forEach((el) => {
+        el.classList.toggle("active", el.dataset.id === id);
+        const outs = transitions.filter((t) => t.from === id).map((t) => t.to);
+        el.classList.toggle("reachable", outs.includes(el.dataset.id));
+      });
+    }
+
+    function select(id) {
+      current = id;
+      renderGraph();
+    }
+
+    function go(to, via) {
+      const screen = screens[to];
+      trail.push(screen.title + (via ? ` ← ${via}` : ""));
+      if (trail.length > 8) trail = trail.slice(-8);
+      current = to;
+      renderGraph();
+    }
+
+    function updatePanel() {
+      const s = screens[current];
+      document.getElementById("screen-title").textContent = s.title;
+      document.getElementById("screen-route").textContent = `Route: ${s.route}`;
+      document.getElementById("trail").textContent = trail.join(" → ");
+
+      const box = document.getElementById("actions");
+      box.innerHTML = "";
+      const outs = transitions.filter((t) => t.from === current);
+      if (!outs.length) {
+        box.innerHTML = "<p style='color:var(--muted);font-size:13px'>No outgoing transitions.</p>";
+        return;
+      }
+      outs.forEach((t) => {
+        const btn = document.createElement("button");
+        btn.innerHTML = `<span class="label">${t.label}</span><span class="hint">→ ${screens[t.to].title} · ${t.kind}</span>`;
+        btn.addEventListener("click", () => go(t.to, t.label));
+        box.appendChild(btn);
+      });
+    }
+
+    renderGraph();
+  </script>
+</body>
+</html>
