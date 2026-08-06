@@ -1,10 +1,7 @@
 <resources>
     <string name="app_name">ToDoApp</string>
-    <!--
-      Web client ID from Firebase Console → Project settings → Your apps → Web client (auto created by Google Sign-In).
-      Also enable Google provider under Authentication → Sign-in method, and add your debug SHA-1.
-    -->
-    <string name="default_web_client_id" translatable="false">REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+    <!-- Web OAuth client (client_type 3) from google-services.json — required by Credential Manager. -->
+    <string name="default_web_client_id" translatable="false">624630670161-rtej17rj4enhdj427i2lgggcd085epic.apps.googleusercontent.com</string>
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="continue_as_guest">Continue as Guest</string>
     <string name="sign_out">Sign out</string>
