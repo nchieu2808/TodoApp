@@ -1,0 +1,10 @@
+---
+description: Guard against duplicate type definitions
+globs: "**/*.{kt,kts}"
+alwaysApply: true
+---
+
+# Type Definition Rules
+
+- Always check for "Type defined multiple times" before declaring or modifying any type, interface, or type alias.
+- Never re-declare an existing type; locate and reuse the single existing definition via imports.

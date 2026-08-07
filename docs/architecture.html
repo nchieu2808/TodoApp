@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ToDoApp — Architecture</title>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#e8f1ee",
+        primaryTextColor: "#1a2e28",
+        primaryBorderColor: "#2d6a5a",
+        secondaryColor: "#f3ebe3",
+        tertiaryColor: "#f7f4ef",
+        lineColor: "#4a635c",
+        fontFamily: "IBM Plex Sans, system-ui, sans-serif",
+        fontSize: "14px",
+      },
+      flowchart: { curve: "basis", padding: 16, htmlLabels: true },
+    });
+  </script>
+  <style>
+    :root {
+      --bg: #f4f0e8;
+      --ink: #1a2e28;
+      --muted: #5a6e66;
+      --accent: #2d6a5a;
+      --accent-soft: #d4e8e0;
+      --card: #fffcf7;
+      --line: #c8d4ce;
+      --warm: #c45c26;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% 0%, #e0ebe6 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 10%, #efe4d6 0%, transparent 50%),
+        var(--bg);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 2.5rem 1.5rem 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header h1 {
+      font-family: "Fraunces", "Georgia", serif;
+      font-weight: 600;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      margin: 0 0 0.4rem;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 42rem;
+      font-size: 1.05rem;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-bottom: 0.75rem;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 4px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem 1.5rem;
+      box-shadow: 0 1px 0 rgba(26, 46, 40, 0.04);
+    }
+
+    section h2 {
+      font-family: "Fraunces", "Georgia", serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 0 0 0.35rem;
+    }
+
+    section .desc {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 0 0 1rem;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+    }
+
+    .legend .ui::before { background: #c5ddd4; }
+    .legend .data::before { background: #e8d5c4; }
+    .legend .auth::before { background: #d4cfe8; }
+    .legend .di::before { background: #c9d8e8; }
+
+    footer {
+      text-align: center;
+      padding: 1rem 1.5rem 2.5rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 640px) {
+      section { padding: 1rem; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header>
+    <div class="badge">com.nch.todoapp</div>
+    <h1>ToDoApp Architecture</h1>
+    <p>
+      Jetpack Compose todo app with Hilt DI, Room cache, pluggable remote API,
+      and Firebase Auth (Google / guest). Graphs below map layers, navigation, and data flow.
+    </p>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Layer overview</h2>
+      <p class="desc">
+        UI talks only to ViewModels → <code>TodoManager</code>. Auth and data backends are injectable interfaces.
+      </p>
+      <pre class="mermaid">
+flowchart TB
+  subgraph APP["Application"]
+    TA["TodoApplication<br/>@HiltAndroidApp"]
+    MA["MainActivity"]
+    NAV["AppNavigation"]
+    TA --> MA --> NAV
+  end
+
+  subgraph UI["UI layer"]
+    LS["LoginScreen"]
+    LIST["ListTodoScreen"]
+    CR["CreateTodoScreen"]
+    DET["DetailsScreen"]
+    LVM["LoginViewModel"]
+    LISTVM["ListTodoViewModel"]
+    CVM["CreateTodoViewModel"]
+    DVM["DetailsViewModel"]
+    LS --- LVM
+    LIST --- LISTVM
+    CR --- CVM
+    DET --- DVM
+  end
+
+  subgraph CORE["Core"]
+    TM["TodoManager<br/>@Singleton"]
+    SM["SessionManager"]
+  end
+
+  subgraph AUTH["Auth"]
+    AR["AuthRepository"]
+    FAR["FirebaseAuthRepository"]
+    AU["AuthUser"]
+    FAR -.->|implements| AR
+  end
+
+  subgraph DATA["Data"]
+    API["ApiService"]
+    LFS["LocalFileApiService<br/>bound in DI"]
+    FBS["FirebaseApiService<br/>ready to swap"]
+    LRS["LocalRepService"]
+    LRSI["LocalRepServiceImpl"]
+    DAO["TodoDao"]
+    DB["TodoDatabase"]
+    ITEM["TodoItem"]
+    LFS -.->|implements| API
+    FBS -.->|implements| API
+    LRSI -.->|implements| LRS
+    LRSI --> DAO --> DB
+    DB --- ITEM
+  end
+
+  NAV --> LS & LIST & CR & DET
+  LVM --> AR
+  LVM --> TM
+  LISTVM & CVM & DVM --> TM
+  FAR --> SM
+  TM --> API
+  TM --> LRS
+  API --> SM
+
+  classDef ui fill:#c5ddd4,stroke:#2d6a5a,color:#1a2e28
+  classDef data fill:#e8d5c4,stroke:#8a5a3a,color:#1a2e28
+  classDef auth fill:#d4cfe8,stroke:#5a4a8a,color:#1a2e28
+  classDef core fill:#f0e6c8,stroke:#8a7a40,color:#1a2e28
+  classDef app fill:#c9d8e8,stroke:#3a5a7a,color:#1a2e28
+
+  class LS,LIST,CR,DET,LVM,LISTVM,CVM,DVM,NAV ui
+  class API,LFS,FBS,LRS,LRSI,DAO,DB,ITEM data
+  class AR,FAR,AU,SM auth
+  class TM core
+  class TA,MA app
+      </pre>
+      <div class="legend">
+        <span class="ui">UI</span>
+        <span class="data">Data</span>
+        <span class="auth">Auth</span>
+        <span class="di">App / DI</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Navigation flow</h2>
+      <p class="desc">
+        Start at List if signed in, else Login. Auth state clears the back stack between Login ↔ List.
+      </p>
+      <pre class="mermaid">
+flowchart LR
+  LOGIN["LOGIN"]
+  LIST["LIST"]
+  CREATE["CREATE"]
+  DETAILS["DETAILS/{todoId}"]
+
+  LOGIN -->|"sign in (Google / guest)"| LIST
+  LIST -->|"sign out"| LOGIN
+  LIST -->|"Add"| CREATE
+  LIST -->|"Open item"| DETAILS
+  CREATE -->|"popBackStack"| LIST
+  DETAILS -->|"popBackStack"| LIST
+
+  classDef n fill:#e8f1ee,stroke:#2d6a5a,color:#1a2e28
+  class LOGIN,LIST,CREATE,DETAILS n
+      </pre>
+    </section>
+
+    <section>
+      <h2>3. Data sync flow</h2>
+      <p class="desc">
+        Remote is source of truth on success. Room is the offline cache / fallback when fetch fails.
+        Today DI binds <code>LocalFileApiService</code> (JSON per user); Firestore impl is swap-ready.
+      </p>
+      <pre class="mermaid">
+flowchart TB
+  VM["Feature ViewModels"]
+  TM["TodoManager"]
+  REM["ApiService<br/>LocalFileApiService ★"]
+  LOC["LocalRepService → Room"]
+  STATE["todoItemsState<br/>StateFlow"]
+
+  VM -->|"sync / CRUD"| TM
+  TM -->|"1. remote first"| REM
+  TM -->|"2. on success: update cache"| LOC
+  TM -->|"3. emit list"| STATE
+  STATE -->|"collect"| VM
+  REM -.->|"fetch fail → keep Room"| LOC
+
+  classDef a fill:#c5ddd4,stroke:#2d6a5a,color:#1a2e28
+  classDef b fill:#f0e6c8,stroke:#8a7a40,color:#1a2e28
+  classDef c fill:#e8d5c4,stroke:#8a5a3a,color:#1a2e28
+  class VM,STATE a
+  class TM b
+  class REM,LOC c
+      </pre>
+    </section>
+
+    <section>
+      <h2>4. Auth &amp; session</h2>
+      <p class="desc">
+        <code>SessionManager</code> holds <code>userId</code> so remotes work for Firebase users and local guests without coupling to FirebaseAuth.
+      </p>
+      <pre class="mermaid">
+flowchart LR
+  UI["LoginScreen"]
+  LVM["LoginViewModel"]
+  FAR["FirebaseAuthRepository"]
+  FA["Firebase Auth<br/>+ Credential Manager"]
+  SM["SessionManager.userId"]
+  API["ApiService<br/>requireUserId()"]
+  TM["TodoManager.clearSession()"]
+
+  UI --> LVM --> FAR
+  FAR -->|"Google / Anonymous / local guest"| FA
+  FAR -->|"set uid"| SM
+  SM --> API
+  LVM -->|"signOut"| FAR
+  FAR -->|"clear"| SM
+  FAR -->|"clear cache"| TM
+
+  classDef a fill:#d4cfe8,stroke:#5a4a8a,color:#1a2e28
+  classDef b fill:#c5ddd4,stroke:#2d6a5a,color:#1a2e28
+  classDef c fill:#e8d5c4,stroke:#8a5a3a,color:#1a2e28
+  class FAR,SM,FA a
+  class UI,LVM b
+  class API,TM c
+      </pre>
+    </section>
+
+    <section>
+      <h2>5. Package map</h2>
+      <p class="desc">Single <code>app</code> module under <code>com.nch.todoapp</code>.</p>
+      <pre class="mermaid">
+mindmap
+  root((ToDoApp))
+    root pkg
+      TodoApplication
+      MainActivity
+      AppNavigation
+      Routes
+    di
+      AppModule
+      RepositoryModule
+    data
+      model TodoItem
+      manager TodoManager
+      local Room DAO
+      remote ApiService
+      auth Firebase + Session
+    ui
+      login
+      list
+      create
+      details
+      common
+      theme
+      base
+      </pre>
+    </section>
+  </main>
+
+  <footer>
+    Open this file in a browser · ToDoApp architecture snapshot
+  </footer>
+</body>
+</html>
